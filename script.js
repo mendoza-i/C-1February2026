@@ -421,61 +421,57 @@ function addChatBubble(text, type) {
 }
 
 /* -----------------------------------------
-   Real AI Integration (Google Gemini)
+   Real AI Integration (Secure via Vercel API)
 ----------------------------------------- */
 async function barangayBot(message) {
-  // PASTE YOUR API KEY HERE inside the quotes:
 
-  const apiKey = "AIzaSyBN_HDEWIp5aKHixIrxo39AXy4vaFnzx5g";
-
-  // This is the specific AI model we are asking
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
-  // Here, we give the AI a "Personality" and instructions on how to act
   const systemPrompt = `You are a helpful, polite, and friendly virtual assistant for Barangay UCAB. 
-  You are only for barangay UCAB, if there are questions unrelated to barangay UCAB, politely tell them you dont know and are only for barnagay UCAB.
-  Answer questions clearly and thoroughly. Use appropriate and friendly emojis in your responses to sound like excellent customer service but do not overuse😊.
-  If they ask about garbage, say Mon/Wed/Fri at 7 AM. 
-  If you don't know the answer, politely tell them to visit the Barangay Hall.`;
+  You are only for barangay UCAB. If there are questions unrelated to barangay UCAB, politely say you only assist Barangay UCAB.
+  Use friendly emojis but do not overuse them 😊.
+  If asked about garbage schedule, say Mon/Wed/Fri at 7 AM.
+  If unsure, politely suggest visiting the Barangay Hall.`;
 
   try {
-    // Send the message to Google's server
-    const response = await fetch(url, {
+
+    const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{
-          parts: [{ text: `${systemPrompt}\n\nUser asks: ${message}` }]
+          parts: [{
+            text: `${systemPrompt}\n\nUser asks: ${message}`
+          }]
         }]
       })
     });
 
     const data = await response.json();
-    console.log("AI Response data:", data);
+    console.log("AI Response:", data);
 
-    // Extract the AI's reply from the server's response
     if (data.candidates && data.candidates.length > 0) {
+
       let textLine = data.candidates[0].content.parts[0].text;
 
-      // Convert basic Markdown to HTML
       let formattedText = textLine
-        .replace(/\*\*(.*?)\*\*/g, '<strong style="font-size: 1.1em; color: #111;">$1</strong>') // Bold and slightly larger text
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')             // Italic text
-        .replace(/\n/g, '<br>');                          // Line breaks
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="font-size: 1.1em;">$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
 
-      // Make bullet points look nicer
       formattedText = formattedText.replace(/<br>\* /g, '<br>&bull; ');
       formattedText = formattedText.replace(/<br>- /g, '<br>&bull; ');
+
       if (formattedText.startsWith('* ') || formattedText.startsWith('- ')) {
         formattedText = '&bull; ' + formattedText.substring(2);
       }
 
       return formattedText;
+
     } else {
-      return "Sorry, I'm having trouble thinking right now. Please try again.";
+      return "Sorry, I'm having trouble thinking right now.";
     }
+
   } catch (error) {
     console.error("AI Error:", error);
-    return "Oops! My system is currently down. Please visit the Barangay Hall for assistance.";
+    return "Oops! The assistant is temporarily unavailable.";
   }
 }
